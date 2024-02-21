@@ -21,27 +21,30 @@ from collections import Counter
 from imblearn.over_sampling import SMOTE
 from keras.models import load_model
 
+
 warnings.filterwarnings("ignore")
 
 np.random.seed(1337)  # for reproducibility
 
 df = pd.read_csv('IOT.csv')
 
-print(df.type.value_counts())
+
 
 labelencoder = LabelEncoder()
 df.iloc[:, -1] = labelencoder.fit_transform(df.iloc[:, -1])
-print(df.type.value_counts())
+print( df.type.value_counts())
+
+
 
 X = df.drop(['ts', 'label', 'type'], axis=1).values
-y = df.iloc[:, -2].values.reshape(-1, 1)
+y = df.iloc[:, -1].values.reshape(-1, 1)
 y = np.ravel(y)
 X_train, X_test, Y_train, Y_test = train_test_split(X, y, train_size=0.8, test_size=0.2,
                                                     random_state=1337, stratify=y)
-# SMOTE
+# # SMOTE
 # smote = SMOTE(sampling_strategy='auto', random_state=1337)
 # X_smotesampled, y_smotesampled = smote.fit_resample(X_train, Y_train)
-# print(Counter(y_smotesampled))
+# print( Counter(y_smotesampled))
 #
 # X_train = X_smotesampled
 # Y_train = y_smotesampled
@@ -62,7 +65,6 @@ print('X_train.shape: ', X_train.shape)
 print('Y_train.shape: ', Y_train.shape)
 print('X_test.shape: ', X_test.shape)
 print('Y_test.shape: ', Y_test.shape)
-
 
 class TimeHistory(callbacks.Callback):
     def on_train_begin(self, logs={}):
@@ -95,38 +97,40 @@ class LearningRateScheduler(Callback):
         K.set_value(self.model.optimizer.lr, lr)
         self.lrates.append(lr)
 
-
 time_callback = TimeHistory()
+
+
+
 accuracy = []
 precision = []
 recall = []
 f1score = []
-# learning_rate = 0.0001
 Time = []
 
 
 # 1. define the network
 def dnn(X_train, Y_train, X_test, Y_test, num_class, batch_size, epochs):
     model = Sequential()
-    model.add(Dense(1024, input_dim=18, activation='Relu', kernel_initializer='glorot_uniform'))
+    model.add(Dense(1024, input_dim=18, activation='tanh', kernel_initializer='glorot_uniform'))
 
     model.add(Dropout(0.2))
-    model.add(Dense(768, activation='Relu'))
+    model.add(Dense(768, activation='tanh'))
     model.add(Dropout(0.2))
-    model.add(Dense(512, activation='Relu'))
+    model.add(Dense(512, activation='tanh'))
     model.add(Dropout(0.2))
-    model.add(Dense(256, activation='Relu'))
+    model.add(Dense(256, activation='tanh'))
     model.add(Dropout(0.2))
-    model.add(Dense(128, activation='Relu'))
+    model.add(Dense(128, activation='tanh'))
     model.add(Dropout(0.2))
     model.add(Dense(num_class))
-    model.add(Activation('Sigmoid'))
+    model.add(Activation('softmax'))
 
     model.summary()
 
     lrs = LearningRateScheduler(epochs)
 
     model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+
 
     history = model.fit(X_train, Y_train, batch_size=batch_size, epochs=epochs, validation_split=0.2,
                         callbacks=[time_callback])
@@ -159,6 +163,8 @@ def dnn(X_train, Y_train, X_test, Y_test, num_class, batch_size, epochs):
     # plt.savefig(f'results/smote_dnn/dnn_multiply_acc.png')
     plt.show()
 
+
+
     Y_train = np_utils.to_categorical(Y_train, num_class)
     Y_test = np_utils.to_categorical(Y_test, num_class)
 
@@ -169,7 +175,7 @@ def dnn(X_train, Y_train, X_test, Y_test, num_class, batch_size, epochs):
     y_pred = np.reshape(y_predict, [-1])
 
     accuracy.append(accuracy_score(y_true, y_pred))
-    precision.append(precision_score(y_true, y_pred, average='weighted'))
+    precision.append(precision_score(y_true, y_pred, average='weighted'))  #
     recall.append(recall_score(y_true, y_pred, average='weighted'))
     f1score.append(f1_score(y_true, y_pred, average='weighted'))
 
@@ -179,7 +185,10 @@ def dnn(X_train, Y_train, X_test, Y_test, num_class, batch_size, epochs):
     print('f1score:', f1score)
 
 
+
 if __name__ == '__main__':
-    dnn(X_train, Y_train, X_test, Y_test, num_class=2, batch_size=512, epochs=80)
+    dnn(X_train, Y_train, X_test, Y_test, num_class=8, batch_size=512, epochs=80)
     print('times:', time_callback.times)
     print('totaltime:', time_callback.totaltime)
+
+

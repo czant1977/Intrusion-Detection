@@ -1,5 +1,4 @@
 
-
 import time
 import warnings
 
@@ -27,24 +26,26 @@ np.random.seed(1337)  # for reproducibility
 
 df = pd.read_csv('IOT.csv')
 
-print(df.type.value_counts())
+print( df.type.value_counts())
+
 labelencoder = LabelEncoder()
 df.iloc[:, -1] = labelencoder.fit_transform(df.iloc[:, -1])
-print(df.type.value_counts())
+print( df.type.value_counts())
 
 
 X = df.drop(['ts', 'label', 'type'], axis=1).values
-y = df.iloc[:, -2].values.reshape(-1, 1)
+y = df.iloc[:, -1].values.reshape(-1, 1)  #
 y = np.ravel(y)
 X_train, X_test, Y_train, Y_test = train_test_split(X, y, train_size=0.8, test_size=0.2,
                                                     random_state=1337, stratify=y)
-# SMOTE
+# # SMOTE
 # smote = SMOTE(sampling_strategy='auto', random_state=1337)
 # X_smotesampled, y_smotesampled = smote.fit_resample(X_train, Y_train)
-# print(Counter(y_smotesampled))
+# print(' Counter(y_smotesampled))
 #
 # X_train = X_smotesampled
 # Y_train = y_smotesampled
+
 
 scaler = Normalizer().fit(X_train)
 X_train = scaler.transform(X_train)
@@ -74,12 +75,15 @@ class TimeHistory(callbacks.Callback):
 
 
 time_callback = TimeHistory()
+
+
+
 accuracy = []
 precision = []
 recall = []
 f1score = []
-# learning_rate = 0.0001
 Time = []
+
 
 # 1. define the network
 def cnn(X_train, Y_train, X_test, Y_test, num_class, batch_size, epochs):
@@ -90,10 +94,12 @@ def cnn(X_train, Y_train, X_test, Y_test, num_class, batch_size, epochs):
     model.add(Conv1D(64, kernel_size=3, strides=1, padding='valid'))
     model.add(Flatten())
     model.add(Dropout(0.2))
-    model.add(Dense(32, kernel_initializer='glorot_uniform', activation='Relu'))
-    model.add(Dense(16, kernel_initializer='glorot_uniform', activation='Relu'))
-    model.add(Dense(num_class, kernel_initializer='glorot_uniform', activation='Sigmoid'))
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    model.add(Dense(32, kernel_initializer='glorot_uniform', activation='tanh'))
+    model.add(Dense(16, kernel_initializer='glorot_uniform', activation='tanh'))
+    model.add(Dense(num_class, kernel_initializer='glorot_uniform', activation='softmax'))
+
+
+    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
     model.summary()
 
     # early_stopping = EarlyStopping(monitor='val_accuracy', patience=5, verbose=1, mode='auto')
@@ -127,7 +133,6 @@ def cnn(X_train, Y_train, X_test, Y_test, num_class, batch_size, epochs):
     # plt.savefig(f'results/cnn/cnn_multiply_acc.png')
     plt.show()
 
-    # test
 
     Y_train = np_utils.to_categorical(Y_train, num_class)
     Y_test = np_utils.to_categorical(Y_test, num_class)
@@ -153,6 +158,6 @@ def cnn(X_train, Y_train, X_test, Y_test, num_class, batch_size, epochs):
 
 
 if __name__ == '__main__':
-    cnn(X_train, Y_train, X_test, Y_test, num_class=2, batch_size=512, epochs=80)
+    cnn(X_train, Y_train, X_test, Y_test, num_class=8, batch_size=512, epochs=80)
     print('times:', time_callback.times)
     print('totaltime:', time_callback.totaltime)
